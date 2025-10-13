@@ -1,14 +1,28 @@
 version: "3.9"
 
 services:
-    api:
-        build: .
-        container_name: hyra-api
-        command: uv run uvicorn api.server:app --host 0.0.0.0 --port 8000
-        ports:
-            - "8000:8000"
-        environment:
-            - DATABASE_URL=postgresql://hyra_user:hyra_pass@db:5432/hyra_db
-            - ENV=dev
-        volumes:
-            - .:/app
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./api:/app/api
+      - ./agents:/app/agents
+      - ./registry:/app/registry
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      - HYRA_MODEL_ID=facebook/opt-125m
+      - VLLM_USE_CUDA=1
+      - VLLM_DEVICE=cuda
+      - VLLM_GPU_MEMORY_UTILIZATION=0.2
+      - VLLM_ATTENTION_BACKEND=TORCH_SDPA
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility

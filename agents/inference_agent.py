@@ -4,8 +4,18 @@ InferenceAgent: manages a single-model vLLM backend for text generation.
 Future versions of HyRA can register multiple such agents and route between them.
 """
 # --- Safe patch for CPU-only Torch builds (no Inductor) ---
+# import os
+
+# os.environ["CUDA_VISIBLE_DEVICES"] = ""
+# os.environ["VLLM_USE_CUDA"] = "0"          # disables CUDA entirely
+# os.environ["VLLM_GPU_MEMORY_UTILIZATION"] = "0.6"  # (optional)
+
 import torch
 import types
+from dotenv import load_dotenv
+load_dotenv()
+
+_instance = None
 
 if not hasattr(torch, "_inductor"):
     torch._inductor = types.SimpleNamespace(config=types.SimpleNamespace())
@@ -29,6 +39,14 @@ class InferenceAgent:
         self._loaded = False
         self.default_sampling = None
 
+    @classmethod
+    def get(cls):
+        global _instance
+        if _instance is None:
+            _instance = cls()
+            _instance.load_model()
+        return _instance
+
     def load_model(self):
         if self.backend != "vllm":
             raise RuntimeError("Only vLLM backend supported here.")
@@ -48,12 +66,15 @@ class InferenceAgent:
             print("[WARN] CUDA not available; falling back to CPU.")
             device_type = "cpu"
 
+        # os.environ["VLLM_ATTENTION_BACKEND"] = "FLASH_ATTN"  # optional, more efficient
+        # os.environ["VLLM_GPU_MEMORY_UTILIZATION"] = "0.7"
+        # os.environ["VLLM_USE_CUDA"] = "0"
+
         # Load LLM (force CPU for MX150)
         self.llm = LLM(
             model=self.model_id,
             dtype="float32" if device_type == "cpu" else "auto",
             tensor_parallel_size=1,
-            device=device_type,
         )
 
         self.default_sampling = SamplingParams(
@@ -62,9 +83,23 @@ class InferenceAgent:
         )
         self._loaded = True
 
+    def get_info(self):
+        return {
+            "model_id": self.model_id,
+            "backend": self.backend,
+            "loaded": self._loaded,
+        }
 
-    def generate(self, prompt: str) -> str:
+
+    def generate(self, prompt: str, max_new_tokens=None, temperature=None, top_k=None, top_p=None):
         if not self._loaded:
             self.load_model()
-        outputs = self.llm.generate([prompt], self.default_sampling)
+
+        sampling = SamplingParams(
+            temperature=temperature or self.default_sampling.temperature,
+            max_tokens=max_new_tokens or self.default_sampling.max_tokens,
+            top_k=top_k,
+            top_p=top_p,
+        )
+        outputs = self.llm.generate([prompt], sampling)
         return outputs[0].outputs[0].text.strip()
