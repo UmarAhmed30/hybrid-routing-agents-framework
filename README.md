@@ -1,7 +1,6 @@
 # 🧠 HyRA — Hybrid Routing Agent Framework
 
-**HyRA** (Hybrid Routing Agent Framework) is a modular, agent-driven system for managing large language model routing, verification, and capability tracking across multiple open-source LLMs.
-This repository contains the base **API service**, development setup, and containerized environment for the framework.
+**HyRA** (Hybrid Routing Agent Framework) is a modular, agent-driven system for managing LLM routing, verification, and capability tracking across multiple open-source LLMs.
 
 ---
 
@@ -10,8 +9,14 @@ This repository contains the base **API service**, development setup, and contai
 HyRA provides a foundation for:
 - **Routing** queries across multiple models (RouterAgent)
 - **Verifying** and scoring outputs (VerifierAgent)
-- **Tracking** metrics like latency, accuracy, and cost (Registry)
+- **Tracking** metrics like latency, accuracy, and cost (ModelRegistry)
 - **Serving** results via a FastAPI interface (API Service)
+
+---
+
+System Architecutre:
+
+![HyRA Architecture](docs/architecture.png)
 
 This setup includes:
 - 🐍 Python 3.11
