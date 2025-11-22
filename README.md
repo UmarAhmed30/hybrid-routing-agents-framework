@@ -1,4 +1,4 @@
-# 🧠 HyRA — Hybrid Routing Agent Framework
+# 🧠 HyRA: Hybrid Routing Agent Framework
 
 **HyRA** (Hybrid Routing Agent Framework) is a modular, agent-driven system for managing LLM routing, verification, and capability tracking across multiple open-source LLMs.
 
@@ -26,7 +26,7 @@ This setup includes:
 
 ### 1️⃣ Clone and enter the repo
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/UmarAhmed30/hybrid-routing-agents-framework.git
 cd hybrid-routing-agents-framework
 ```
 
