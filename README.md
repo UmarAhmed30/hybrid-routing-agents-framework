@@ -14,7 +14,7 @@ HyRA provides a foundation for:
 - **Serving** results via a FastAPI interface (API Service)
 
 This setup includes:
-- 🐍 Python 3.12
+- 🐍 Python 3.11
 - ⚡ FastAPI + Uvicorn
 
 ## ⚙️ Setup Instructions
