@@ -37,10 +37,18 @@ Below are one-command Docker runs for each model.
 
 #### Run Server
 
+Linux/WSL:
+
 ```bash
 docker run --rm --security-opt seccomp=unconfined \
   --cap-add SYS_NICE --shm-size=4g -p 8000:8000 \
   vllm-cpu-env --model=Qwen/Qwen2.5-1.5B-Instruct --dtype=bfloat16
+```
+
+Windows:
+
+```bash
+docker run --rm --security-opt seccomp=unconfined --cap-add SYS_NICE --shm-size=4g -p 8000:8000 vllm-cpu-env --model=Qwen/Qwen2.5-1.5B-Instruct --dtype=bfloat16
 ```
 
 #### Example Curl
@@ -51,7 +59,8 @@ curl http://localhost:8000/v1/completions \
   -d '{
     "model": "Qwen/Qwen2.5-1.5B-Instruct",
     "prompt": "Q: What is 2+2?\nA:",
-    "max_tokens": 100
+    "max_tokens": 100,
+    "logprobs": 5
 }'
 ```
 
@@ -59,10 +68,18 @@ curl http://localhost:8000/v1/completions \
 
 #### Run Server
 
+Linux/WSL:
+
 ```bash
 docker run --rm --security-opt seccomp=unconfined \
   --cap-add SYS_NICE --shm-size=4g -p 8000:8000 \
   vllm-cpu-env --model=Qwen/Qwen2.5-3B-Instruct --dtype=bfloat16
+```
+
+Windows:
+
+```bash
+docker run --rm --security-opt seccomp=unconfined --cap-add SYS_NICE --shm-size=4g -p 8000:8000 vllm-cpu-env --model=Qwen/Qwen2.5-3B-Instruct --dtype=bfloat16
 ```
 
 #### Example Curl
@@ -77,14 +94,22 @@ curl http://localhost:8000/v1/completions \
 }'
 ```
 
-### 3️⃣ DeepSeek Math 1.5B
+### 3️⃣ DeepSeek-R1-Distill-Qwen-1.5B
 
 #### Run Server
+
+Linux/WSL:
 
 ```bash
 docker run --rm --security-opt seccomp=unconfined \
   --cap-add SYS_NICE --shm-size=4g -p 8000:8000 \
-  vllm-cpu-env --model=Deepseek-AI/DeepSeek-Math-1.5B --dtype=bfloat16
+  vllm-cpu-env --model=deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B --dtype=bfloat16
+```
+
+Windows:
+
+```bash
+docker run --rm --security-opt seccomp=unconfined --cap-add SYS_NICE --shm-size=4g -p 8000:8000 vllm-cpu-env --model=deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B --dtype=bfloat16
 ```
 
 #### Example Curl
@@ -93,7 +118,7 @@ docker run --rm --security-opt seccomp=unconfined \
 curl http://localhost:8000/v1/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "Deepseek-AI/DeepSeek-Math-1.5B",
+    "model": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
     "prompt": "Q: What is 2+2?\nA:",
     "max_tokens": 100
 }'
@@ -103,11 +128,20 @@ curl http://localhost:8000/v1/completions \
 
 #### Run Server
 
+Linux/WSL:
+
 ```bash
 docker run --rm --security-opt seccomp=unconfined \
   --cap-add SYS_NICE --shm-size=4g -p 8000:8000 \
   vllm-cpu-env --model=TinyLlama/TinyLlama-1.1B-Chat-v1.0 --dtype=bfloat16
 ```
+
+Windows:
+
+```bash
+docker run --rm --security-opt seccomp=unconfined --cap-add SYS_NICE --shm-size=4g -p 8000:8000 vllm-cpu-env --model=TinyLlama/TinyLlama-1.1B-Chat-v1.0 --dtype=bfloat16
+```
+
 #### Example Curl
 
 ```bash
@@ -115,6 +149,36 @@ curl http://localhost:8000/v1/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+    "prompt": "Q: What is 2+2?\nA:",
+    "max_tokens": 100
+}'
+```
+
+### 5️⃣ deepseek-math-7b-instruct
+
+#### Run Server
+
+Linux/WSL:
+
+```bash
+docker run --rm --security-opt seccomp=unconfined \
+  --cap-add SYS_NICE --shm-size=4g -p 8000:8000 \
+  vllm-cpu-env --model=deepseek-ai/deepseek-math-7b-instruct --dtype=bfloat16
+```
+
+Windows:
+
+```bash
+docker run --rm --security-opt seccomp=unconfined --cap-add SYS_NICE --shm-size=4g -p 8000:8000 vllm-cpu-env --model=TinyLlama/deepseek-ai/deepseek-math-7b-instruct --dtype=bfloat16
+```
+
+#### Example Curl
+
+```bash
+curl http://localhost:8000/v1/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "deepseek-ai/deepseek-math-7b-instruct",
     "prompt": "Q: What is 2+2?\nA:",
     "max_tokens": 100
 }'
