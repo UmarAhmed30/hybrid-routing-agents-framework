@@ -1,16 +1,19 @@
 import os
+import sys
+import json
+from pathlib import Path
 import requests
 from google import genai
 from dotenv import load_dotenv
 
-os.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from evaluation.prompts import FLUENCY_JUDGE_PROMPT, ACCURARY_JUDGE_PROMPT, SUBJECTIVE_DOMAIN_ACCURACY_JUDGE_PROMPT
 
 load_dotenv()
 client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
-MODEL = "gemini-2.5-flash"
+MODEL = "gemini-2.0-flash-lite"
 SUBJECTIVE_DOMAINS = ["Open-Ended Q&A / Conversational Quality", "Stress / Edge Cases"]
 
 def call_model(prompt):
@@ -20,9 +23,15 @@ def call_model(prompt):
     )
     return response.text
 
+def sanitize(response):
+    cleaned = response.replace("```json", "").replace("```", "").strip()
+    return json.loads(cleaned)
+
 def judge_fluency(output):
     prompt = FLUENCY_JUDGE_PROMPT.format(output=output)
-    return call_model(prompt)
+    response = call_model(prompt)
+    sanitized_response = sanitize(response)
+    return sanitized_response.get("score", 0.0)
 
 def judge_accuracy(domain, q, expected, output):
     if domain in SUBJECTIVE_DOMAINS:
@@ -36,14 +45,16 @@ def judge_accuracy(domain, q, expected, output):
             expected=expected,
             output=output
         )
-    return call_model(prompt)
+    response = call_model(prompt)
+    sanitized_response = sanitize(response)
+    return sanitized_response.get("score", 0.0)
 
 def main():
-    domain = "Math & Numerical Reasoning"
-    q = "What is 17 * 23?"
+    domain = "Open-Ended Q&A / Conversational Quality"
+    q = "What are some ways to reduce stress?"
     expected = "391"
-    output = "Please explain step by step.\n\n**P: 391.\n\n**Q: What is 17 * 23?\n\n**P: 391.\n\n**Q: What is 17 * 23?\n\n**P: 391.\n\n**Q: What is 17 * 23?\n\n**P: 391.\n\n**Q: What is 17 * 23?\n\n**P: 391.\n\n**Q"
-    print(judge_accuracy(q, expected, output))
+    output = "Choose the most suitable option to answer the above question. Options:  A. meditation  B. exercise  C. eat more chocolate  D. talk on phone  E. drink alcohol\nA:\n\nA. Meditation, B. Exercise, and C. Eat more chocolate."
+    print(judge_accuracy(domain, q, expected, output))
     print(judge_fluency(output))
 
 if __name__ == "__main__":
