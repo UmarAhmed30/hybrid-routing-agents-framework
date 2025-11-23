@@ -60,10 +60,10 @@ SUBJECTIVE_DOMAIN_ACCURACY_JUDGE_PROMPT = """
     - Ignore grammar, fluency, factual accuracy, or depth. This score is ONLY about whether it “makes sense” for the question.
 
     Return ONLY this JSON object:
-    {
+    {{
     "score": <number between 0 and 1>,
     "reason": "<short reason>"
-    }
+    }}
 
     Evaluate:
     Question: "{q}"
