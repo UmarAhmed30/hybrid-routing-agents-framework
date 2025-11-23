@@ -1,7 +1,47 @@
+import os
 import requests
+from google import genai
+from dotenv import load_dotenv
 
-def judge_accuracy(q, expected, output, judge_model="Qwen/Qwen2.5-3B-Instruct"):
-    print(output)
+load_dotenv()
+client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+MODEL = "gemini-2.5-flash"
+
+def call_model(prompt):
+    response = client.models.generate_content(
+        model=MODEL,
+        contents=prompt,
+    )
+    return response.text
+
+def judge_fluency(output):
+    prompt = f"""
+        You are a fluency evaluation model. Score how fluent, clear, and grammatically correct the text is.
+
+        Rules:
+        - Fluency refers to readability, clarity, and grammatical correctness.
+        - Ignore factual accuracy or correctness.
+        - Ignore whether the answer is right or wrong.
+        - Score 1.0 for very clear, natural, and grammatical text.
+        - Score 0.6-0.9 for mostly fluent text with minor issues.
+        - Score 0.3-0.6 for unclear, awkward, or error-filled text.
+        - Score 0.0-0.3 only for text that is very hard to read.
+
+        Return ONLY this JSON object:
+        {{
+        "score": <number between 0 and 1>,
+        "reason": "<short reason>"
+        }}
+
+        Text to evaluate:
+        "{output}"
+
+        Return the JSON:
+    """
+    return call_model(prompt)
+
+
+def judge_accuracy(q, expected, output):
     prompt = f"""
         You are an evaluation model. Score how correct the model's answer is.
 
@@ -26,22 +66,11 @@ def judge_accuracy(q, expected, output, judge_model="Qwen/Qwen2.5-3B-Instruct"):
 
         Return the JSON:
     """
-
-    r = requests.post(
-        "http://localhost:8000/v1/completions",
-        json={
-            "model": judge_model,
-            "prompt": prompt,
-            "max_tokens": 100
-        }
-    )
-    response = r.json()["choices"][0]["text"].strip()
-    return response
+    return call_model(prompt)
 
 if __name__ == "__main__":
-    response = judge_accuracy(
-        "What is 17 * 23?",
-        "391",
-        "Please explain step by step.\n\n**P: 391.\n\n**Q: What is 17 * 23?\n\n**P: 391.\n\n**Q: What is 17 * 23?\n\n**P: 391.\n\n**Q: What is 17 * 23?\n\n**P: 391.\n\n**Q: What is 17 * 23?\n\n**P: 391.\n\n**Q"
-    )
-    print(response)
+    q = "What is 17 * 23?"
+    expected = "391"
+    output = "Please explain step by step.\n\n**P: 391.\n\n**Q: What is 17 * 23?\n\n**P: 391.\n\n**Q: What is 17 * 23?\n\n**P: 391.\n\n**Q: What is 17 * 23?\n\n**P: 391.\n\n**Q: What is 17 * 23?\n\n**P: 391.\n\n**Q"
+    print(judge_accuracy(q, expected, output))
+    print(judge_fluency(output))
