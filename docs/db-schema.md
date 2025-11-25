@@ -1,15 +1,3 @@
-Here is a **clean, scalable, production-quality DB schema** for storing **per-model, per-domain, per-metric** performance values — including *accuracy, confidence, latency, cost, usage_count*, etc.
-
-This schema works for:
-
-✔ Routing / model selection
-✔ Tracking metrics over time
-✔ Storing benchmark datasets per domain
-✔ Aggregating scores dynamically
-✔ Updating metrics after each query
-
----
-
 # ✅ **Recommended Schema (PostgreSQL)**
 
 Below is the minimal but complete design:
@@ -227,15 +215,3 @@ models 1---* model_metric_events *---1 domains
 domains 1---* domain_benchmarks
 domain_benchmarks 1---* model_metric_events
 ```
-
----
-
-# If you want, I can also generate:
-
-✅ Full SQL migrations
-✅ SQLAlchemy ORM models
-✅ FastAPI API endpoints (`POST metrics/update`, `GET model-ranking`, etc.)
-✅ Benchmark runner script to populate metrics
-✅ A dashboard (React or Streamlit)
-
-Would you like those?
