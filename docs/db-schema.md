@@ -12,9 +12,9 @@ Stores static metadata about each model.
 CREATE TABLE models (
     id SERIAL PRIMARY KEY,
     model_name TEXT UNIQUE NOT NULL,
-    provider TEXT,                -- e.g. "openai", "google", "ollama"
-    context_length INTEGER,
+    provider TEXT,
     description TEXT,
+    cost FLOAT,
     created_at TIMESTAMP DEFAULT NOW()
 );
 ```
@@ -63,24 +63,17 @@ CREATE TABLE model_metrics (
     id SERIAL PRIMARY KEY,
     model_id INTEGER REFERENCES models(id),
     domain_id INTEGER REFERENCES domains(id),
-
-    accuracy FLOAT,              -- computed from benchmark results
+    accuracy_score FLOAT,
+    fluency_score FLOAT,
     latency_ms FLOAT,
-    cost_per_query FLOAT,
-    failure_rate FLOAT,
+    failure_count BIGINT DEFAULT 0,
     confidence FLOAT,
-    variance FLOAT,
-    avg_output_length FLOAT,
     tokens_per_query FLOAT,
-
     usage_count BIGINT DEFAULT 0,
     last_updated TIMESTAMP DEFAULT NOW(),
-
     UNIQUE (model_id, domain_id)
 );
 ```
-
-This matches what you showed in your screenshot.
 
 ---
 
@@ -108,8 +101,6 @@ CREATE TABLE model_metric_events (
     created_at TIMESTAMP DEFAULT NOW()
 );
 ```
-
-You compute aggregated metrics from this table.
 
 ---
 
@@ -215,3 +206,40 @@ models 1---* model_metric_events *---1 domains
 domains 1---* domain_benchmarks
 domain_benchmarks 1---* model_metric_events
 ```
+
+```sql
+INSERT INTO models (model_name, provider, cost) VALUES
+('Qwen2.5-1.5B-Instruct', 'Qwen', 1.0),
+('Qwen2.5-3B-Instruct', 'Qwen', 2.0),
+('DeepSeek-R1-Distill-Qwen-1.5B', 'deepseek-ai', 1.0),
+('TinyLlama-1.1B-Chat-v1.0', 'TinyLlama', 0.7),
+('deepseek-math-7b-instruct', 'deepseek-ai', 5.0);
+```
+
+```sql
+INSERT INTO domains (name) VALUES
+('Math & Numerical Reasoning'),
+('Logic & Deductive Reasoning'),
+('General Knowledge'),
+('Summarization'),
+('Instruction Following'),
+('Classification'),
+('Code / Technical Reasoning'),
+('Safety & Compliance'),
+('Open-Ended Q&A / Conversational Quality'),
+('Stress / Edge Cases');
+```
+
+.\cloud-sql-proxy.exe lab7-476520:us-central1:hyra --port=5433
+
+\l
+
+\c hyra
+
+\dt
+
+\d models
+
+pg_dump -U postgres -h 127.0.0.1 -p 5433 -d hyra -F c -f hyra_backup.dump
+
+pg_restore -U postgres -h 127.0.0.1 -p 5433 -d hyra_v2 hyra_backup.dump

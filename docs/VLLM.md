@@ -169,7 +169,7 @@ docker run --rm --security-opt seccomp=unconfined \
 Windows:
 
 ```bash
-docker run --rm --security-opt seccomp=unconfined --cap-add SYS_NICE --shm-size=4g -p 8000:8000 vllm-cpu-env --model=TinyLlama/deepseek-ai/deepseek-math-7b-instruct --dtype=bfloat16
+docker run --rm --security-opt seccomp=unconfined --cap-add SYS_NICE --shm-size=4g -p 8000:8000 vllm-cpu-env --model=deepseek-ai/deepseek-math-7b-instruct --dtype=bfloat16
 ```
 
 #### Example Curl

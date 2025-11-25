@@ -1,0 +1,28 @@
+Qwen2.5-1.5B-Instruct
+
+➜ python .\benchmark.py
+[DONE] Metrics updated in PostgreSQL.
+[TOTAL TIME] 747.9385139942169
+
+Qwen2.5-3B-Instruct
+
+➜ python .\benchmark.py
+[DONE] Metrics updated in PostgreSQL.
+[TOTAL TIME] 1309.9285020828247
+
+DeepSeek-R1-Distill-Qwen-1.5B
+
+➜ python .\benchmark.py
+[ERROR] Benchmarking DeepSeek-R1-Distill-Qwen-1.5B failed: Expecting ',' delimiter: line 3 column 78 (char 95)
+[ERROR] Benchmarking DeepSeek-R1-Distill-Qwen-1.5B failed: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource exhausted. Please try again later. Please refer to https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429 for more details.', 'status': 'RESOURCE_EXHAUSTED'}}
+[DONE] Metrics updated in PostgreSQL.
+[TOTAL TIME] 945.8387944698334
+
+TinyLlama-1.1B-Chat-v1.0
+
+[TOTAL TIME] 581.0176577568054
+
+Around 4 errored out
+
+deepseek-math-7b-instruct
+
