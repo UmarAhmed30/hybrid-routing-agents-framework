@@ -154,7 +154,7 @@ curl http://localhost:8000/v1/completions \
 }'
 ```
 
-### 5️⃣ deepseek-math-7b-instruct
+### 5️⃣ microsoft/Phi-3-mini-4k-instruct
 
 #### Run Server
 
@@ -163,13 +163,13 @@ Linux/WSL:
 ```bash
 docker run --rm --security-opt seccomp=unconfined \
   --cap-add SYS_NICE --shm-size=4g -p 8000:8000 \
-  vllm-cpu-env --model=deepseek-ai/deepseek-math-7b-instruct --dtype=bfloat16
+  vllm-cpu-env --model=microsoft/Phi-3-mini-4k-instruct --dtype=bfloat16
 ```
 
 Windows:
 
 ```bash
-docker run --rm --security-opt seccomp=unconfined --cap-add SYS_NICE --shm-size=4g -p 8000:8000 vllm-cpu-env --model=deepseek-ai/deepseek-math-7b-instruct --dtype=bfloat16
+docker run --rm --security-opt seccomp=unconfined --cap-add SYS_NICE --shm-size=4g -p 8000:8000 vllm-cpu-env --model=microsoft/Phi-3-mini-4k-instruct --dtype=bfloat16
 ```
 
 #### Example Curl
@@ -178,7 +178,37 @@ docker run --rm --security-opt seccomp=unconfined --cap-add SYS_NICE --shm-size=
 curl http://localhost:8000/v1/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "deepseek-ai/deepseek-math-7b-instruct",
+    "model": "microsoft/Phi-3-mini-4k-instruct",
+    "prompt": "Q: What is 2+2?\nA:",
+    "max_tokens": 100
+}'
+```
+
+### 6️⃣ Qwen/Qwen2.5-0.5B-Instruct
+
+#### Run Server
+
+Linux/WSL:
+
+```bash
+docker run --rm --security-opt seccomp=unconfined \
+  --cap-add SYS_NICE --shm-size=4g -p 8000:8000 \
+  vllm-cpu-env --model=Qwen/Qwen2.5-0.5B-Instruct --dtype=bfloat16
+```
+
+Windows:
+
+```bash
+docker run --rm --security-opt seccomp=unconfined --cap-add SYS_NICE --shm-size=4g -p 8000:8000 vllm-cpu-env --model=Qwen/Qwen2.5-0.5B-Instruct --dtype=bfloat16
+```
+
+#### Example Curl
+
+```bash
+curl http://localhost:8000/v1/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
     "prompt": "Q: What is 2+2?\nA:",
     "max_tokens": 100
 }'
