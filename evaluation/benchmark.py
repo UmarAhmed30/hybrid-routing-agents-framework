@@ -5,8 +5,6 @@ import time
 import json
 import requests
 import math
-import psycopg2
-from psycopg2.extras import RealDictCursor
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 

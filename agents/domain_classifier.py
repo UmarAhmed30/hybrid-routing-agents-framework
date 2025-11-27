@@ -20,7 +20,7 @@ def classify(prompt):
             domains=formatted_domains,
             prompt=prompt
         )
-        return gemini_client.generate_content(system_prompt)
+        return gemini_client.generate_content(system_prompt).strip()
     except Exception as e:
         print("Error during domain classification:", e)
         return "Open-Ended Q&A / Conversational Quality"
