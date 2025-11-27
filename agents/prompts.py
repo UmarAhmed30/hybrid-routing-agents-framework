@@ -16,3 +16,19 @@ Rules:
 Prompt to classify:
 "{prompt}"
 """
+
+VERIFIER_PROMPT = """
+You are an expert answer verifier. Compare the Model Output against the Expected Output.
+
+Model Output: "{model_output}"
+Expected Output: "{expected_output}"
+
+Verification Rules:
+1. **Core Fact Matching:** If the key information (entities, numbers, dates) in the Expected Output is present in the Model Output, return "true".
+2. **Verbosity Handling:** Treat concise answers (e.g., "Paris") as equivalent to verbose answers (e.g., "The capital is Paris") provided the core fact is the same.
+3. **Contradictions:** If the Model Output contradicts the Expected Output (e.g., "London" vs "Paris"), return "false".
+
+Output Requirements:
+- Return strictly "true" or "false".
+- No punctuation or explanation.
+"""
