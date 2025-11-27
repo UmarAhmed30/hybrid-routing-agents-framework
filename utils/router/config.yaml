@@ -1,0 +1,7 @@
+weights:
+  accuracy: 0.50
+  confidence: 0.20
+  fluency: 0.20
+  latency: 0.10
+penalties:
+  verification_fail_multiplier: 0.85

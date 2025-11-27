@@ -253,3 +253,5 @@ INSERT INTO domains (name) VALUES
 pg_dump -U postgres -h 127.0.0.1 -p 5433 -d hyra -F c -f hyra_backup.dump
 
 pg_restore -U postgres -h 127.0.0.1 -p 5433 -d hyra hyra_backup.dump
+
+psql -U postgres -h 127.0.0.1 -p 5433
