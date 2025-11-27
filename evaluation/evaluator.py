@@ -3,25 +3,15 @@ import sys
 import json
 from pathlib import Path
 import requests
-from google import genai
-from dotenv import load_dotenv
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from utils.gemini.client import GeminiClient
 from evaluation.prompts import FLUENCY_JUDGE_PROMPT, ACCURARY_JUDGE_PROMPT, SUBJECTIVE_DOMAIN_ACCURACY_JUDGE_PROMPT
 
-load_dotenv()
-client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
-
-MODEL = "gemini-2.0-flash-lite"
 SUBJECTIVE_DOMAINS = ["Open-Ended Q&A / Conversational Quality", "Stress / Edge Cases"]
 
-def call_model(prompt):
-    response = client.models.generate_content(
-        model=MODEL,
-        contents=prompt,
-    )
-    return response.text
+gemini_client = GeminiClient()
 
 def sanitize(response):
     cleaned = response.replace("```json", "").replace("```", "").strip()
@@ -29,7 +19,7 @@ def sanitize(response):
 
 def judge_fluency(output):
     prompt = FLUENCY_JUDGE_PROMPT.format(output=output)
-    response = call_model(prompt)
+    response = gemini_client.generate_content(prompt)
     sanitized_response = sanitize(response)
     return sanitized_response.get("score", 0.0)
 
@@ -45,7 +35,7 @@ def judge_accuracy(domain, q, expected, output):
             expected=expected,
             output=output
         )
-    response = call_model(prompt)
+    response = gemini_client.generate_content(prompt)
     sanitized_response = sanitize(response)
     return sanitized_response.get("score", 0.0)
 

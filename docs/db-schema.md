@@ -217,6 +217,16 @@ INSERT INTO models (model_name, provider, cost) VALUES
 ```
 
 ```sql
+INSERT INTO models (model_name, provider, cost) VALUES
+('Phi-3-mini-4k-instruct', 'microsoft', 2.5);
+```
+
+```sql
+INSERT INTO models (model_name, provider, cost) VALUES
+('Qwen2.5-0.5B-Instruct', 'Qwen', 0.3);
+```
+
+```sql
 INSERT INTO domains (name) VALUES
 ('Math & Numerical Reasoning'),
 ('Logic & Deductive Reasoning'),
@@ -242,4 +252,4 @@ INSERT INTO domains (name) VALUES
 
 pg_dump -U postgres -h 127.0.0.1 -p 5433 -d hyra -F c -f hyra_backup.dump
 
-pg_restore -U postgres -h 127.0.0.1 -p 5433 -d hyra_v2 hyra_backup.dump
+pg_restore -U postgres -h 127.0.0.1 -p 5433 -d hyra hyra_backup.dump

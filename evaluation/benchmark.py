@@ -20,7 +20,9 @@ MODELS = [
     # "Qwen2.5-3B-Instruct",
     # "DeepSeek-R1-Distill-Qwen-1.5B",
     # "TinyLlama-1.1B-Chat-v1.0",
-    "deepseek-math-7b-instruct"
+    # "deepseek-math-7b-instruct",
+    # "Phi-3-mini-4k-instruct",
+    "Qwen2.5-0.5B-Instruct"
 ]
 
 def get_model_row(conn, model_name):
@@ -182,9 +184,9 @@ def main():
             try:
                 benchmark(conn, model, domain_id, q, a)
             except Exception as e:
-                print(f"[ERROR] Benchmarking {model} failed: {e}")
+                print(f"[ERROR] Benchmarking {model} failed for question {q}: {e}")
                 continue
-        time.sleep(10)
+        time.sleep(20)
 
     conn.close()
     print("[DONE] Metrics updated in PostgreSQL.")
