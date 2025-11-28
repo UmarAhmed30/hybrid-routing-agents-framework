@@ -4,6 +4,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
+from langfuse.tracer import langfuse
+
 from utils.router.config import load_config
 from utils.gemini.client import GeminiClient
 
@@ -90,9 +92,21 @@ def update_metrics(conn, model_id, domain_id, metrics, passed):
 
 
 def route(prompt):
+    trace = langfuse.trace(
+        name="route",
+        input=prompt,
+        metadata={"prompt": prompt}
+    )
+
+
     # Domain Classification
     domain = classify(prompt)
     print(f"[ROUTER] Classified domain = {domain}")
+    trace.span(
+        name="domain_classification",
+        input=prompt,
+        output=domain
+    )
 
     conn = get_connection()
     cur = conn.cursor()
@@ -108,19 +122,30 @@ def route(prompt):
     row = cur.fetchone()
     model_name, provider = row['model_name'], row['provider']
     print(f"[ROUTER] Selected model = {model_name}")
+    trace.span(
+        name="model_selection",
+        output={"model_id": model_id, "model_name": model_name, "provider": provider}
+    )
+
 
     # Inference
     t1 = time.time()
-    result = run(model_name, provider, prompt)
+    with trace.span(name="inference", input={"prompt": prompt, "model": model_name}) as inference_span:
+        result = run(model_name, provider, prompt)
     t2 = time.time()
 
     latency_ms = (t2 - t1) * 1000
+    inference_span.update_output(result)
+
     text = result["response_text"]
     confidence = result["confidence"]
     tokens = result["total_tokens"]
 
     # Evaluate output
-    expected_output = gemini_client.generate_content(prompt).strip()
+    with trace.span(name="expected_output_generation", input=prompt) as span_exp:
+        expected_output = gemini_client.generate_content(prompt).strip()
+        span_exp.update_output({"expected": expected_output})
+
     accuracy = judge_accuracy(domain_id, prompt, expected_output, text)
     fluency = judge_fluency(text)
 
@@ -133,14 +158,30 @@ def route(prompt):
     }
 
     print(f"[ROUTER] Output metrics = {metrics}")
+    trace.span(
+        name="evaluation",
+        input={"prompt": prompt},
+        output=metrics
+    )
+
 
     # Verification
-    passed = verify(text, expected_output)
+    with trace.span(name="verification", input={"model_output": text, "expected_output": expected_output}) as vspan:
+        passed = verify(text, expected_output)
+        vspan.update_output({"verified": passed})
 
     print(f"[ROUTER] Verifier passed? {passed}")
+    trace.span(
+        name="metrics_update",
+        input=metrics,
+        output={"verified": passed}
+    )
+
 
     # Update metrics (reward or penalize)
     update_metrics(conn, model_id, domain_id, metrics, passed)
+
+    trace.end()
 
     conn.close()
 
