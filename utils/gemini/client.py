@@ -2,6 +2,8 @@ import os
 from google import genai
 from dotenv import load_dotenv
 
+load_dotenv()
+
 class GeminiClient:
     def __init__(self):
         self.model = "gemini-2.0-flash-lite"
