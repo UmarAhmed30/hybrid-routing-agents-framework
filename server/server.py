@@ -10,8 +10,8 @@ from utils.router.router import route
 
 app = flask.Flask(__name__)
 
-@app.route('/api/generate_anwser', methods=['POST'])
-def generate_anwser_endpoint():
+@app.route('/api/generate_answer', methods=['POST'])
+def generate_answer_endpoint():
     data = flask.request.json
     question = data.get('query')
 
