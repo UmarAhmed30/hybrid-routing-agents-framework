@@ -1,35 +1,68 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from "react";
+import Sidebar from "./components/Sidebar";
+import ChatWindow from "./components/ChatWindow";
+import type { Chat } from "./types";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [chats, setChats] = useState<Chat[]>([
+    {
+      id: "1",
+      title: "Welcome",
+      messages: [],
+      createdAt: new Date(),
+    },
+  ]);
+
+  const [activeId, setActiveId] = useState<string>("1");
+
+  const activeChat = chats.find((c) => c.id === activeId) || chats[0];
+
+  const updateActiveChat = (messages: any[]) => {
+    setChats((prev) =>
+      prev.map((c) =>
+        c.id === activeId
+          ? {
+              ...c,
+              messages,
+              title:
+                messages.length > 0
+                  ? messages[0].content.substring(0, 30) + "..."
+                  : c.title,
+            }
+          : c
+      )
+    );
+  };
+
+  const createNewChat = () => {
+    const newChat: Chat = {
+      id: Date.now().toString(),
+      title: "New Chat",
+      messages: [],
+      createdAt: new Date(),
+    };
+    setChats((prev) => [newChat, ...prev]);
+    setActiveId(newChat.id);
+  };
+
+  const deleteChat = (id: string) => {
+    if (chats.length === 1) return;
+    setChats((prev) => prev.filter((c) => c.id !== id));
+    if (activeId === id) {
+      setActiveId(chats[0].id);
+    }
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="flex h-screen w-screen bg-white">
+      <Sidebar
+        chats={chats}
+        activeId={activeId}
+        onSelectChat={setActiveId}
+        onNewChat={createNewChat}
+        onDeleteChat={deleteChat}
+      />
+      <ChatWindow chat={activeChat} onUpdateMessages={updateActiveChat} />
+    </div>
+  );
 }
-
-export default App
