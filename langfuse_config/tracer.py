@@ -1,5 +1,8 @@
 from langfuse import Langfuse
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Read from env or use empty config for development
 secret_key = os.getenv("LANGFUSE_SECRET_KEY", "")
