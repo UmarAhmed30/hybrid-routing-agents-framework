@@ -54,7 +54,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen w-screen bg-white">
+    <div className="flex h-screen w-screen bg-white overflow-hidden">
       <Sidebar
         chats={chats}
         activeId={activeId}
@@ -62,7 +62,9 @@ export default function App() {
         onNewChat={createNewChat}
         onDeleteChat={deleteChat}
       />
-      <ChatWindow chat={activeChat} onUpdateMessages={updateActiveChat} />
+      <div className="flex-1 overflow-hidden">
+        <ChatWindow chat={activeChat} onUpdateMessages={updateActiveChat} />
+      </div>
     </div>
   );
 }
