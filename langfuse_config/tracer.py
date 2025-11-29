@@ -1,29 +1,20 @@
 from langfuse import Langfuse
 import os
 
-# Read from env or hardcode during development
-langfuse = Langfuse(
-    secret_key=os.getenv("LANGFUSE_SECRET_KEY", "sk-lf-"),
-    public_key=os.getenv("LANGFUSE_PUBLIC_KEY", "pk-lf-"),
-    base_url=os.getenv("LANGFUSE_BASE_URL", "https://us.cloud.langfuse.com")
-)
+# Read from env or use empty config for development
+secret_key = os.getenv("LANGFUSE_SECRET_KEY", "")
+public_key = os.getenv("LANGFUSE_PUBLIC_KEY", "")
 
-# Drop-in replacement to get full logging by changing only the import
-# from langfuse.openai import OpenAI
- 
-# # Configure the OpenAI client to use http://localhost:11434/v1 as base url 
-# client = OpenAI(
-#     base_url = 'http://localhost:11434/v1',
-#     api_key='ollama', # required, but unused
-# )
- 
-# response = client.chat.completions.create(
-#   model="llama3.1",
-#   messages=[
-#     {"role": "system", "content": "You are a helpful assistant."},
-#     {"role": "user", "content": "Who was the first person to step on the moon?"},
-#     {"role": "assistant", "content": "Neil Armstrong was the first person to step on the moon on July 20, 1969, during the Apollo 11 mission."},
-#     {"role": "user", "content": "What were his first words when he stepped on the moon?"}
-#   ]
-# )
-# print(response.choices[0].message.content)
+if secret_key and public_key:
+    langfuse = Langfuse(
+        secret_key=secret_key,
+        public_key=public_key,
+        base_url=os.getenv("LANGFUSE_BASE_URL", "https://us.cloud.langfuse.com")
+    )
+else:
+    # Create a disabled Langfuse instance if no credentials
+    langfuse = Langfuse(
+        secret_key="placeholder",
+        public_key="placeholder",
+        base_url="http://localhost:54321",  # Disabled mode
+    )
