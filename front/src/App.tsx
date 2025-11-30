@@ -14,6 +14,7 @@ export default function App() {
   ]);
 
   const [activeId, setActiveId] = useState<string>("1");
+  const [logs, setLogs] = useState<string[]>([]);
 
   const activeChat = chats.find((c) => c.id === activeId) || chats[0];
 
@@ -63,7 +64,11 @@ export default function App() {
         onDeleteChat={deleteChat}
       />
       <div className="flex-1 overflow-hidden">
-        <ChatWindow chat={activeChat} onUpdateMessages={updateActiveChat} />
+        <ChatWindow 
+          chat={activeChat} 
+          onUpdateMessages={updateActiveChat}
+          onLogsUpdate={setLogs}
+        />
       </div>
     </div>
   );

@@ -91,17 +91,22 @@ def update_metrics(conn, model_id, domain_id, metrics, passed):
     cur.close()
 
 
-def route(prompt):
+def route(prompt, event_callback=None):
     trace = langfuse.start_span(
         name="route",
         input=prompt,
         metadata={"prompt": prompt}
     )
 
+    def log_event(message):
+        print(message)
+        if event_callback:
+            event_callback(message)
 
     # Domain Classification
     domain = classify(prompt)
-    print(f"[ROUTER] Classified domain = {domain}")
+    log_msg = f"[ROUTER] Classified domain = {domain}"
+    log_event(log_msg)
     domain_span = trace.start_span(
         name="domain_classification",
         input=prompt
@@ -122,7 +127,8 @@ def route(prompt):
     cur.execute("SELECT model_name, provider FROM models WHERE id = %s", (model_id,))
     row = cur.fetchone()
     model_name, provider = row['model_name'], row['provider']
-    print(f"[ROUTER] Selected model = {model_name}")
+    log_msg = f"[ROUTER] Selected model = {model_name}"
+    log_event(log_msg)
     model_span = trace.start_span(
         name="model_selection"
     )
@@ -131,6 +137,8 @@ def route(prompt):
 
 
     # Inference
+    log_msg = f"[ROUTER] Starting inference with {model_name}..."
+    log_event(log_msg)
     t1 = time.time()
     inference_span = trace.start_span(name="inference", input={"prompt": prompt, "model": model_name})
     result = run(model_name, provider, prompt)
@@ -139,19 +147,32 @@ def route(prompt):
     latency_ms = (t2 - t1) * 1000
     inference_span.update(output=result)
     inference_span.end()
+    
+    log_msg = f"[ROUTER] Inference completed in {latency_ms:.2f}ms"
+    log_event(log_msg)
 
     text = result["response_text"]
     confidence = result["confidence"]
     tokens = result["total_tokens"]
+    
+    log_msg = f"[ROUTER] Response: {text[:100]}..." if len(text) > 100 else f"[ROUTER] Response: {text}"
+    log_event(log_msg)
 
     # Evaluate output
+    log_msg = "[ROUTER] Generating expected output for evaluation..."
+    log_event(log_msg)
     span_exp = trace.start_span(name="expected_output_generation", input=prompt)
     expected_output = gemini_client.generate_content(prompt).strip()
     span_exp.update(output={"expected": expected_output})
     span_exp.end()
-
+    
+    log_msg = "[ROUTER] Evaluating accuracy and fluency..."
+    log_event(log_msg)
     accuracy = judge_accuracy(domain_id, prompt, expected_output, text)
     fluency = judge_fluency(text)
+    
+    log_msg = f"[ROUTER] Accuracy: {accuracy:.4f}, Fluency: {fluency:.4f}"
+    log_event(log_msg)
 
     metrics = {
         "accuracy": accuracy,
@@ -161,7 +182,8 @@ def route(prompt):
         "tokens": tokens
     }
 
-    print(f"[ROUTER] Output metrics = {metrics}")
+    log_msg = f"[ROUTER] Output metrics = {metrics}"
+    log_event(log_msg)
     eval_span = trace.start_span(
         name="evaluation",
         input={"prompt": prompt}
@@ -176,7 +198,8 @@ def route(prompt):
     vspan.update(output={"verified": passed})
     vspan.end()
 
-    print(f"[ROUTER] Verifier passed? {passed}")
+    log_msg = f"[ROUTER] Verifier passed? {passed}"
+    log_event(log_msg)
     metrics_span = trace.start_span(
         name="metrics_update",
         input=metrics

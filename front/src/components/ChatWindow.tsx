@@ -5,12 +5,15 @@ import type { Chat, Message } from "../types";
 interface ChatWindowProps {
   chat: Chat;
   onUpdateMessages: (messages: Message[]) => void;
+  onLogsUpdate?: (logs: string[]) => void;
 }
 
-export default function ChatWindow({ chat, onUpdateMessages }: ChatWindowProps) {
+export default function ChatWindow({ chat, onUpdateMessages, onLogsUpdate }: ChatWindowProps) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [logs, setLogs] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -28,29 +31,75 @@ export default function ChatWindow({ chat, onUpdateMessages }: ChatWindowProps) 
     onUpdateMessages(updatedMessages);
     setInput("");
     setLoading(true);
+    setLogs([]);
 
     try {
-      // Call your backend endpoint here
-      const response = await fetch("/api/generate_answer", {
+      // Step 1: Create a new session
+      const sessionRes = await fetch("http://localhost:5000/api/start_session", {
+        method: "POST",
+      });
+      const sessionData = await sessionRes.json();
+      const sessionId = sessionData.session_id;
+
+      // Step 2: Start the routing process
+      await fetch("http://localhost:5000/api/start_routing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: input }),
+        body: JSON.stringify({ query: input, session_id: sessionId }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        const botMsg: Message = {
-          role: "assistant",
-          content: data.output || "No response received",
-        };
-        onUpdateMessages([...updatedMessages, botMsg]);
-      } else {
-        const botMsg: Message = {
-          role: "assistant",
-          content: "Error: Could not reach the server",
-        };
-        onUpdateMessages([...updatedMessages, botMsg]);
-      }
+      // Step 3: Poll for logs and result
+      const lastLogCount = { count: 0 };
+
+      const pollLogs = async () => {
+        try {
+          const res = await fetch(`http://localhost:5000/api/get_logs/${sessionId}`);
+          const data = await res.json();
+
+          // Update logs if there are new ones
+          if (data.logs.length > lastLogCount.count) {
+            const newLogs = data.logs.slice(lastLogCount.count);
+            setLogs((prev) => {
+              const updated = [...prev, ...newLogs];
+              onLogsUpdate?.(updated);
+              return updated;
+            });
+            lastLogCount.count = data.logs.length;
+          }
+
+          // Check if routing is complete
+          if (data.status === "complete") {
+            const botMsg: Message = {
+              role: "assistant",
+              content: data.result?.output || "No response received",
+            };
+            onUpdateMessages([...updatedMessages, botMsg]);
+            setLoading(false);
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+              pollIntervalRef.current = null;
+            }
+          } else if (data.status === "error") {
+            const botMsg: Message = {
+              role: "assistant",
+              content: `Error: ${data.error}`,
+            };
+            onUpdateMessages([...updatedMessages, botMsg]);
+            setLoading(false);
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+              pollIntervalRef.current = null;
+            }
+          }
+        } catch (error) {
+          console.error("Polling error:", error);
+        }
+      };
+
+      // Poll every 500ms
+      pollIntervalRef.current = setInterval(pollLogs, 500);
+      // Also poll immediately
+      pollLogs();
     } catch (error) {
       console.error("Error:", error);
       const botMsg: Message = {
@@ -58,7 +107,6 @@ export default function ChatWindow({ chat, onUpdateMessages }: ChatWindowProps) 
         content: "Error: Failed to send message",
       };
       onUpdateMessages([...updatedMessages, botMsg]);
-    } finally {
       setLoading(false);
     }
   }
@@ -99,6 +147,18 @@ export default function ChatWindow({ chat, onUpdateMessages }: ChatWindowProps) 
           </>
         )}
       </div>
+
+      {/* Logs Panel */}
+      {logs.length > 0 && (
+        <div className="border-t border-gray-200 bg-gray-50 p-4 max-h-40 overflow-y-auto">
+          <h3 className="font-semibold text-xs text-gray-700 mb-2 uppercase tracking-wide">Server Events</h3>
+          <div className="font-mono text-xs text-gray-600 space-y-1">
+            {logs.map((log, i) => (
+              <div key={i} className="text-blue-600 break-words">{log}</div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Input Area */}
       <div className="border-t border-gray-200 p-6 bg-white">
