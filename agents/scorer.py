@@ -7,13 +7,18 @@ from db.client import get_connection
 
 conn = get_connection()
 
+def normalize_latency(latency_ms, min_ms=300, max_ms=1500):
+    # 1.0 = fast, 0.0 = slow
+    latency_clamped = max(min(latency_ms, max_ms), min_ms)
+    return (max_ms - latency_clamped) / (max_ms - min_ms)
+
 def compute_score(row, weights):
-    latency_component = 1.0 / max(row["latency_ms"], 1e-6)
+    lat_norm = normalize_latency(row["latency_ms"])
     quality_score = (
         weights["accuracy"]   * row["accuracy_score"] +
         weights["fluency"]    * row["fluency_score"] +
         weights["confidence"] * row["confidence"] +
-        weights["latency"]    * latency_component
+        weights["latency"]    * lat_norm
     )
     cost_factor = 1.0 / (1.0 + row["cost"])
     return quality_score * cost_factor
