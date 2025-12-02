@@ -1,5 +1,6 @@
 import os
 import sys
+import asyncio
 import json
 from pathlib import Path
 import requests
@@ -17,9 +18,9 @@ def sanitize(response):
     cleaned = response.replace("```json", "").replace("```", "").strip()
     return json.loads(cleaned)
 
-def judge_fluency(output):
+async def judge_fluency(output):
     prompt = FLUENCY_JUDGE_PROMPT.format(output=output)
-    response = gemini_client.generate_content(prompt)
+    response = await asyncio.to_thread(gemini_client.generate_content, prompt)
     sanitized_response = sanitize(response)
     return sanitized_response.get("score", 0.0)
 

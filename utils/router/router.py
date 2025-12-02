@@ -1,6 +1,8 @@
 import sys
 import time
+import asyncio
 from pathlib import Path
+from functools import lru_cache
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
@@ -9,15 +11,19 @@ from utils.gemini.client import GeminiClient
 
 from db.client import get_connection
 
-from agents.domain_classifier import classify
+from agents.domain_classifier import classify as raw_classify
 from agents.scorer import get_best_model
-from agents.verifier import verify
+from agents.advanced_verifier import verify as advanced_verify
 from agents.inference import run
 
-from evaluation.evaluator import judge_accuracy, judge_fluency
+from evaluation.evaluator import judge_fluency
 
 config = load_config()
 gemini_client = GeminiClient()
+
+@lru_cache(maxsize=5000)
+def classify(prompt: str):
+    return raw_classify(prompt)
 
 
 def update_metrics(conn, model_id, domain_id, metrics, passed):
@@ -114,15 +120,30 @@ def route(prompt):
     result = run(model_name, provider, prompt)
     t2 = time.time()
 
+
     latency_ms = (t2 - t1) * 1000
     text = result["response_text"]
     confidence = result["confidence"]
     tokens = result["total_tokens"]
 
-    # Evaluate output
-    expected_output = gemini_client.generate_content(prompt).strip()
-    accuracy = judge_accuracy(domain_id, prompt, expected_output, text)
-    fluency = judge_fluency(text)
+    print(f"[INFERENCE] Total inference time: {latency_ms:.2f} ms")
+
+    async def evaluate_parallel():
+        task_verify = asyncio.create_task(
+            advanced_verify(prompt, text)
+        )
+        task_fluency = asyncio.create_task(
+            judge_fluency(text)
+        )
+        verify_result = await task_verify
+        fluency_score = await task_fluency
+        return verify_result, fluency_score
+
+    verify_result, fluency_score = asyncio.run(evaluate_parallel())
+
+    accuracy = verify_result["accuracy"]
+    fluency = fluency_score
+    passed = verify_result["passed"]
 
     metrics = {
         "accuracy": accuracy,
@@ -133,11 +154,6 @@ def route(prompt):
     }
 
     print(f"[ROUTER] Output metrics = {metrics}")
-
-    # Verification
-    passed = verify(text, expected_output)
-
-    print(f"[ROUTER] Verifier passed? {passed}")
 
     # Update metrics (reward or penalize)
     update_metrics(conn, model_id, domain_id, metrics, passed)
@@ -156,7 +172,7 @@ def route(prompt):
 
 if __name__ == "__main__":
     t1 = time.time()
-    result = route("What is the capital of France?")
+    result = route("What is a vowel?")
     t2 = time.time()
     print(f"[ROUTER] Total routing time: {(t2 - t1)*1000:.2f} ms")
     print(result)
