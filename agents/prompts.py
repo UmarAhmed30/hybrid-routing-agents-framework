@@ -32,3 +32,35 @@ Output Requirements:
 - Return strictly "true" or "false".
 - No punctuation or explanation.
 """
+
+ADVANCED_VERIFIER_PROMPT = """
+You are an expert evaluation model. Your task is to evaluate whether the Model Output is a correct, relevant, and complete answer to the given Question.
+
+Input Data:
+- Question: "{q}"
+- Model Output: "{model_output}"
+
+Evaluation Rules:
+1. Faithfulness: Ensure the response answers the specific question asked without drifting.
+2. Factual Correctness:
+    - Rely on your internal knowledge base to verify facts, numbers, dates, and entities.
+    - Penalize hallucinations or invented information heavily.
+3. Completeness: The answer should address all parts of the question.
+
+Scoring Rubric:
+- Accuracy (Float):
+    - 1.0: Factually correct, precise, and fully addresses the question.
+    - 0.5 - 0.9: Mostly correct but contains minor errors, fluff, or slight omissions.
+    - 0.0 - 0.4: Factually incorrect, hallucinates, or completely irrelevant.
+
+- Passed (Boolean):
+    - Return "true" if the answer is factually accurate and sufficient.
+    - Return "false" if the answer contains factual errors or misses the core intent.
+
+Return ONLY a valid JSON object with no markdown formatting:
+{{
+    "reason": "<short 1-sentence explanation of the score>",
+    "accuracy": <float between 0.0 and 1.0>,
+    "passed": <boolean>
+}}
+"""

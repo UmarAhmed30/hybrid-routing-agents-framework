@@ -1,6 +1,8 @@
 import sys
 import time
+import asyncio
 from pathlib import Path
+from functools import lru_cache
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
@@ -11,15 +13,19 @@ from utils.gemini.client import GeminiClient
 
 from db.client import get_connection
 
-from agents.domain_classifier import classify
+from agents.domain_classifier import classify as raw_classify
 from agents.scorer import get_best_model
-from agents.verifier import verify
+from agents.advanced_verifier import verify as advanced_verify
 from agents.inference import run
 
-from evaluation.evaluator import judge_accuracy, judge_fluency
+from evaluation.evaluator import judge_fluency
 
 config = load_config()
 gemini_client = GeminiClient()
+
+@lru_cache(maxsize=5000)
+def classify(prompt: str):
+    return raw_classify(prompt)
 
 
 def update_metrics(conn, model_id, domain_id, metrics, passed):
@@ -144,6 +150,7 @@ def route(prompt, event_callback=None):
     result = run(model_name, provider, prompt)
     t2 = time.time()
 
+
     latency_ms = (t2 - t1) * 1000
     inference_span.update(output=result)
     inference_span.end()
@@ -158,21 +165,33 @@ def route(prompt, event_callback=None):
     log_msg = f"[ROUTER] Response: {text[:100]}..." if len(text) > 100 else f"[ROUTER] Response: {text}"
     log_event(log_msg)
 
-    # Evaluate output
-    log_msg = "[ROUTER] Generating expected output for evaluation..."
-    log_event(log_msg)
-    span_exp = trace.start_span(name="expected_output_generation", input=prompt)
-    expected_output = gemini_client.generate_content(prompt).strip()
-    span_exp.update(output={"expected": expected_output})
-    span_exp.end()
-    
-    log_msg = "[ROUTER] Evaluating accuracy and fluency..."
-    log_event(log_msg)
-    accuracy = judge_accuracy(domain_id, prompt, expected_output, text)
-    fluency = judge_fluency(text)
-    
-    log_msg = f"[ROUTER] Accuracy: {accuracy:.4f}, Fluency: {fluency:.4f}"
-    log_event(log_msg)
+    print(f"[INFERENCE] Total inference time: {latency_ms:.2f} ms")
+
+    async def evaluate_parallel():
+        task_verify = asyncio.create_task(
+            advanced_verify(prompt, text)
+        )
+        task_fluency = asyncio.create_task(
+            judge_fluency(text)
+        )
+        verify_result = await task_verify
+        fluency_score = await task_fluency
+        return verify_result, fluency_score
+
+    verify_span = trace.start_span(name="verification_and_fluency")
+    verify_result, fluency_score = asyncio.run(evaluate_parallel())
+
+    accuracy = verify_result["accuracy"]
+    fluency = fluency_score
+    passed = verify_result["passed"]
+    verify_span.update(
+        output={
+            "accuracy": accuracy,
+            "fluency": fluency,
+            "passed": passed
+        }
+    )
+    verify_span.end()
 
     metrics = {
         "accuracy": accuracy,
@@ -182,30 +201,9 @@ def route(prompt, event_callback=None):
         "tokens": tokens
     }
 
-    log_msg = f"[ROUTER] Output metrics = {metrics}"
-    log_event(log_msg)
-    eval_span = trace.start_span(
-        name="evaluation",
-        input={"prompt": prompt}
-    )
+    eval_span = trace.start_span(name="metrics_summary")
     eval_span.update(output=metrics)
     eval_span.end()
-
-
-    # Verification
-    vspan = trace.start_span(name="verification", input={"model_output": text, "expected_output": expected_output})
-    passed = verify(text, expected_output)
-    vspan.update(output={"verified": passed})
-    vspan.end()
-
-    log_msg = f"[ROUTER] Verifier passed? {passed}"
-    log_event(log_msg)
-    metrics_span = trace.start_span(
-        name="metrics_update",
-        input=metrics
-    )
-    metrics_span.update(output={"verified": passed})
-    metrics_span.end()
 
 
     # Update metrics (reward or penalize)
@@ -227,7 +225,7 @@ def route(prompt, event_callback=None):
 
 if __name__ == "__main__":
     t1 = time.time()
-    result = route("What is the capital of France?")
+    result = route("What is a vowel?")
     t2 = time.time()
     print(f"[ROUTER] Total routing time: {(t2 - t1)*1000:.2f} ms")
     print(result)
