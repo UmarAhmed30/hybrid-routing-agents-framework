@@ -17,11 +17,11 @@ cd hybrid-routing-agents-framework
 pip install -r requirements.txt
 ```
 
-### 3️⃣ Configure env variables (Refer env.example)
+### 3️⃣ Configure env variables (Refer [`env.example`](env.example))
 
-### 4️⃣ Setup PostgreSQL DB (Refer docs\db-schema.md)
+### 4️⃣ Setup PostgreSQL DB (Refer [`db-schema.md`](docs/db-schema.md))
 
-### 5️⃣ Start desired model inference APIs (Refer docs\VLLM.md and docs\ollama.md)
+### 5️⃣ Start desired model inference APIs (Refer [`VLLM.md`](docs/VLLM.md) and [`ollama.md`](docs/ollama.md))
 
 ### 6️⃣ Run Flask API
 ```bash
