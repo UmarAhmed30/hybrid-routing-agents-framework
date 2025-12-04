@@ -31,7 +31,7 @@ python server.py
 
 ### 7️⃣ Run Web Application
 ```bash
-cd front
+cd frontend
 npm install
 npm run dev
 ```
