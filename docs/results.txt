@@ -42,5 +42,3 @@ Qwen/Qwen2.5-0.5B-Instruct - 20 seconds
 [ERROR] Benchmarking Qwen2.5-0.5B-Instruct failed for question Can you explain the thing in the place?: Expecting ',' delimiter: line 3 column 88 (char 105)
 [DONE] Metrics updated in PostgreSQL.
 [TOTAL TIME] 1022.6739332675934
-
-https://chatgpt.com/share/6927b25f-bc30-8012-ad0a-a054e2fc73e7
